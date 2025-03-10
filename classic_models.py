@@ -5,11 +5,12 @@ import seaborn as sns
 import os
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, ConfusionMatrixDisplay, f1_score
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn import model_selection
 from sklearn.linear_model import LogisticRegressionCV, RidgeClassifierCV, SGDClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, StratifiedKFold
 from sklearn.ensemble import AdaBoostClassifier, BaggingClassifier, GradientBoostingClassifier, RandomForestClassifier, VotingClassifier
 from xgboost import XGBClassifier
@@ -151,6 +152,7 @@ class InitializingModels:
 
             # Nearest Neighbour
             KNeighborsClassifier(),
+            GaussianNB(),
 
             # XGBoost
             XGBClassifier()
@@ -179,7 +181,7 @@ class InitializingModels:
         metrics_data = [self.model_name, self.test_accuracy, self.test_precision, self.test_recall, self.test_f1]
         m = {n:m for n,m in zip(self.metrics_cols,metrics_data)}
         model_metrics = pd.DataFrame(m)
-        model_metrics = model_metrics.sort_values('test_accuracy', ascending=False)
+        model_metrics = model_metrics.sort_values('test_f1', ascending=False)
         model_metrics.to_csv('result/model_creation.csv')
         print(model_metrics)
 
@@ -198,6 +200,21 @@ class ChurnModelEvaluator:
         os.makedirs(self.results_dir, exist_ok=True)
         self.tuned_models = {}
 
+    def tune_naive_bayes_classifier(self):
+        nb_classifier = GaussianNB()
+
+        params_NB = {'var_smoothing': np.logspace(0, -9, num=100)}
+        tuner = GridSearchCV(estimator=nb_classifier,
+                             param_grid=params_NB,
+                             verbose=1,
+                             scoring='f1')
+
+        tuner.fit(self.X_train, self.y_train)
+        best_model = tuner.best_estimator_
+        self.tuned_models["GaussianNB"] = best_model
+        print("Best GaussianNB params:", tuner.best_params_)
+        return best_model
+
     def tune_gradient_boosting(self, use_randomized=False):
         if use_randomized:
             param_dist = {
@@ -211,7 +228,7 @@ class ChurnModelEvaluator:
                 param_distributions=param_dist,
                 n_iter=20,
                 cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
-                scoring='accuracy',
+                scoring='f1',
                 random_state=42,
                 n_jobs=-1
             )
@@ -225,7 +242,7 @@ class ChurnModelEvaluator:
                 GradientBoostingClassifier(random_state=42),
                 param_grid=param_grid,
                 cv=5,
-                scoring='accuracy',
+                scoring='f1',
                 n_jobs=-1
             )
         tuner.fit(self.X_train, self.y_train)
@@ -243,7 +260,7 @@ class ChurnModelEvaluator:
             AdaBoostClassifier(random_state=42),
             param_grid=param_grid,
             cv=5,
-            scoring='accuracy',
+            scoring='f1',
             n_jobs=-1
         )
         tuner.fit(self.X_train, self.y_train)
@@ -260,7 +277,7 @@ class ChurnModelEvaluator:
             RidgeClassifierCV(),
             param_grid=param_grid,
             cv=5,
-            scoring='accuracy',
+            scoring='f1',
             n_jobs=-1
         )
         tuner.fit(self.X_train, self.y_train)
@@ -271,9 +288,9 @@ class ChurnModelEvaluator:
 
     def evaluate_and_save(self, model, model_name):
         y_pred = model.predict(self.X_test)
-        acc = accuracy_score(self.y_test, y_pred) * 100
+        acc = f1_score(self.y_test, y_pred) * 100
         print(f"\nModel: {model_name}")
-        print("Accuracy: {:.2f}%".format(acc))
+        print("F1 Score: {:.2f}%".format(acc))
         print("Classification Report:\n", classification_report(self.y_test, y_pred))
 
         # Save confusion matrix
@@ -332,7 +349,12 @@ class ChurnModelEvaluator:
             self.evaluate_and_save(model, name)
 
     def build_voting_classifier(self):
-        required_models = {"GradientBoostingClassifier", "AdaBoostClassifier", "LogisticRegressionCV"}
+        required_models = {
+                            "GradientBoostingClassifier",
+                           "AdaBoostClassifier",
+                           # "LogisticRegressionCV",
+                           "GaussianNB",
+                           }
         if not required_models.issubset(set(self.tuned_models.keys())):
             print("Please tune GradientBoosting, AdaBoost, and LogisticRegressionCV models first.")
             return None
@@ -341,15 +363,17 @@ class ChurnModelEvaluator:
             estimators=[
                 ('gb', self.tuned_models["GradientBoostingClassifier"]),
                 ('ada', self.tuned_models["AdaBoostClassifier"]),
-                ('lgcv', self.tuned_models["LogisticRegressionCV"])
+                # ('lgcv', self.tuned_models["LogisticRegressionCV"]),
+                ('nbg', self.tuned_models['GaussianNB'])
             ],
+
             voting='hard'
         )
         voting_clf.fit(self.X_train, self.y_train)
 
         y_pred = voting_clf.predict(self.X_test)
-        acc = accuracy_score(self.y_test, y_pred) * 100
-        print("Voting Classifier Accuracy: {:.2f}%".format(acc))
+        acc = f1_score(self.y_test, y_pred) * 100
+        print("Voting Classifier F1 Score: {:.2f}%".format(acc))
         print("Classification Report (Voting):\n", classification_report(self.y_test, y_pred))
 
         cm = confusion_matrix(self.y_test, y_pred)
@@ -437,9 +461,9 @@ df_churn_tuned = df_churn[['customerID',
                            'Contract',
                            'tenure_bin',
                            'OnlineSecurity',
-                           'TechSupport',
+                           # 'TechSupport',
                            # 'PhoneService',
-                           # 'InternetService',
+                           'InternetService',
                            'tenure'
                            ]]
 
@@ -451,6 +475,7 @@ evaluator = ChurnModelEvaluator(X_train, y_train, X_test, y_test, graphs_dir="gr
 gb_model = evaluator.tune_gradient_boosting(use_randomized=False)
 ab_model = evaluator.tune_adaboost()
 rc_model = evaluator.tune_ridge()
+nbg_model = evaluator.tune_naive_bayes_classifier()
 
 evaluator.evaluate_all()
 
