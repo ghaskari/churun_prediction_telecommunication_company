@@ -200,6 +200,20 @@ class ChurnModelEvaluator:
         os.makedirs(self.results_dir, exist_ok=True)
         self.tuned_models = {}
 
+    def tune_xgb_classifier(self):
+        xgbc = XGBClassifier()
+        params_xgb = {
+            'max_depth': 10,
+            'learning_rate': 0.1,
+            'n_estimators': 100,
+            'random_state': 42
+        }
+
+        tuner = GridSearchCV(estimator=xgbc,
+                             param_grid=params_xgb,
+                             scoring='f1'
+                             )
+
     def tune_naive_bayes_classifier(self):
         nb_classifier = GaussianNB()
 
@@ -352,8 +366,10 @@ class ChurnModelEvaluator:
         required_models = {
                             "GradientBoostingClassifier",
                            "AdaBoostClassifier",
-                           # "LogisticRegressionCV",
+                           "LogisticRegressionCV",
                            "GaussianNB",
+                            # "XGBoost",
+
                            }
         if not required_models.issubset(set(self.tuned_models.keys())):
             print("Please tune GradientBoosting, AdaBoost, and LogisticRegressionCV models first.")
@@ -363,8 +379,9 @@ class ChurnModelEvaluator:
             estimators=[
                 ('gb', self.tuned_models["GradientBoostingClassifier"]),
                 ('ada', self.tuned_models["AdaBoostClassifier"]),
-                # ('lgcv', self.tuned_models["LogisticRegressionCV"]),
-                ('nbg', self.tuned_models['GaussianNB'])
+                ('lgcv', self.tuned_models["LogisticRegressionCV"]),
+                ('nbg', self.tuned_models['GaussianNB']),
+                # ('xgb', self.tuned_models["XGBoost"]),
             ],
 
             voting='hard'
@@ -476,7 +493,7 @@ gb_model = evaluator.tune_gradient_boosting(use_randomized=False)
 ab_model = evaluator.tune_adaboost()
 rc_model = evaluator.tune_ridge()
 nbg_model = evaluator.tune_naive_bayes_classifier()
-
+xgb_model = evaluator.tune_xgb_classifier()
 evaluator.evaluate_all()
 
 voting_model = evaluator.build_voting_classifier()
