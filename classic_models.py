@@ -465,37 +465,46 @@ class ChurnModelEvaluator:
         return final_df
 
 
-data_churn = pd.read_csv('files/dataset.csv')
-print_dataframe_stats(data_churn)
+def main():
 
-df_churn = handle_categorical_values(data_churn)
-df_churn = cleaning_table(df_churn)
-df_churn.to_csv('result/df_churn.csv', index=False)
-df_churn_tuned = df_churn[['customerID',
-                           'MonthlyCharges',
-                           'TotalCharges',
-                           'Churn',
-                           'Contract',
-                           'tenure_bin',
-                           'OnlineSecurity',
-                           # 'TechSupport',
-                           # 'PhoneService',
-                           'InternetService',
-                           'tenure'
-                           ]]
+    data_churn = pd.read_csv('files/dataset.csv')
+    print_dataframe_stats(data_churn)
 
-X, y, X_train, X_test, y_train, y_test = split_train_test_model(df_churn_tuned)
-model_metrics_all = InitializingModels().get_model_results(X, y)
+    df_churn = handle_categorical_values(data_churn)
+    df_churn = cleaning_table(df_churn)
+    df_churn.to_csv('result/df_churn.csv', index=False)
+    df_churn_tuned = df_churn[['customerID',
+                               'MonthlyCharges',
+                               'TotalCharges',
+                               'Churn',
+                               'Contract',
+                               'tenure_bin',
+                               'OnlineSecurity',
+                               # 'TechSupport',
+                               # 'PhoneService',
+                               'InternetService',
+                               'tenure'
+                               ]]
 
-evaluator = ChurnModelEvaluator(X_train, y_train, X_test, y_test, graphs_dir="graph", results_dir="result")
+    X, y, X_train, X_test, y_train, y_test = split_train_test_model(df_churn_tuned)
+    model_metrics_all = InitializingModels().get_model_results(X, y)
 
-gb_model = evaluator.tune_gradient_boosting(use_randomized=False)
-ab_model = evaluator.tune_adaboost()
-rc_model = evaluator.tune_ridge()
-nbg_model = evaluator.tune_naive_bayes_classifier()
-xgb_model = evaluator.tune_xgb_classifier()
-evaluator.evaluate_all()
+    evaluator = ChurnModelEvaluator(X_train, y_train, X_test, y_test, graphs_dir="graph", results_dir="result")
 
-voting_model = evaluator.build_voting_classifier()
+    gb_model = evaluator.tune_gradient_boosting(use_randomized=False)
+    ab_model = evaluator.tune_adaboost()
+    rc_model = evaluator.tune_ridge()
+    nbg_model = evaluator.tune_naive_bayes_classifier()
+    xgb_model = evaluator.tune_xgb_classifier()
 
-final_dataset = evaluator.get_final_dataset_with_predictions(voting_model)
+    evaluator.evaluate_all()
+
+    voting_model = evaluator.build_voting_classifier()
+
+    final_dataset = evaluator.get_final_dataset_with_predictions(voting_model)
+
+    return final_dataset
+
+
+if __name__ == '__main__':
+        main()
