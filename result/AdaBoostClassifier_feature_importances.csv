@@ -1,0 +1,6 @@
+Feature,Importance
+MonthlyCharges,0.8333333333333334
+Contract,0.05333333333333334
+tenure_bin,0.04666666666666667
+InternetService,0.04666666666666667
+OnlineSecurity,0.02

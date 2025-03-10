@@ -1,0 +1,10 @@
+,model_name,test_accuracy,test_precision,test_recall,test_f1
+7,GaussianNB,75.0,52.1,73.4,60.9
+8,XGBClassifier,78.10000000000001,60.699999999999996,50.0,54.7
+4,LogisticRegressionCV,78.4,62.1,48.4,54.300000000000004
+2,GradientBoostingClassifier,78.7,63.6,46.9,53.900000000000006
+6,KNeighborsClassifier,77.2,58.4,49.8,53.7
+0,AdaBoostClassifier,78.0,61.8,46.300000000000004,52.7
+5,RidgeClassifierCV,78.8,65.5,42.8,51.7
+3,RandomForestClassifier,73.9,51.0,47.199999999999996,49.0
+1,BaggingClassifier,74.4,52.0,45.4,48.4
