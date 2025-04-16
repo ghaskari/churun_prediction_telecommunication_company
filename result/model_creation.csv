@@ -6,5 +6,5 @@
 6,KNeighborsClassifier,77.2,58.4,49.8,53.7
 0,AdaBoostClassifier,78.0,61.8,46.300000000000004,52.7
 5,RidgeClassifierCV,78.8,65.5,42.8,51.7
-3,RandomForestClassifier,73.9,51.0,47.199999999999996,49.0
-1,BaggingClassifier,74.4,52.0,45.4,48.4
+3,RandomForestClassifier,74.2,51.5,47.699999999999996,49.5
+1,BaggingClassifier,74.7,52.7,45.300000000000004,48.699999999999996

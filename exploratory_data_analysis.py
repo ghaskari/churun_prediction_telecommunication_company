@@ -291,7 +291,7 @@ class ChurnAnalysis:
         self.categorical_correlation()
         self.calculate_churn_rate()
         self.plot_pair_plots()
-        # self.plot_pair_plots_separate()
+        self.plot_pair_plots_separate()
         # self.plot_hist_plots_separate()
         self.plot_all_boxplots()
         self.plot_all_churn_counts()
