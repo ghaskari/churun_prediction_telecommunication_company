@@ -2,7 +2,6 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
@@ -11,7 +10,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline as SKPipeline
 from sklearn.metrics import classification_report, roc_auc_score
 
-from tensorflow.keras import layers, callbacks, models
+from keras import layers, callbacks, models
 
 
 class ChurnFeatureEngineer:
@@ -90,7 +89,7 @@ class ChurnNeuralNetwork:
         model.compile(
             optimizer='adam',
             loss='binary_crossentropy',
-            metrics=[tf.keras.metrics.AUC(name='auc')]
+            metrics=[keras.metrics.AUC(name='auc')]
         )
         return model
 
